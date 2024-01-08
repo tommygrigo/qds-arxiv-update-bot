@@ -9,6 +9,7 @@ import argparse
 import configparser
 from typing import List, Tuple
 from os import linesep
+import os
 
 import feedparser
 import telebot
@@ -172,10 +173,10 @@ def main():
     The main function.
     """
     parser = argparse.ArgumentParser(description="Scrap the arXiv")
-    parser.add_argument('token', metavar='token', type=str, #nargs='+',
-                    help='Telegram token for sending the messages')
-    parser.add_argument('id', metavar='id', type=int, #nargs='+',
-                    help='Telegram chat id for sending the messages')
+    # parser.add_argument('token', metavar='token', type=str, #nargs='+',
+    #                 help='Telegram token for sending the messages')
+    # parser.add_argument('id', metavar='id', type=int, #nargs='+',
+    #                 help='Telegram chat id for sending the messages')
 
     parser.add_argument(
         "-c",
@@ -185,8 +186,11 @@ def main():
 
     args = parser.parse_args()
     config_path = args.config_path or DEFAULT_CONFIGURATION_PATH
-    token = args.token
-    chat_id = args.id
+    # token = args.token
+    # chat_id = args.id
+    
+    token = os.environ('TOKEN')
+    token = os.environ('CHATID')
     
     categories, buzzwords, authors = load_config(config_path)
 

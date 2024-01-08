@@ -1,8 +1,6 @@
-name: Bot Workflow
+name: Bot Workflow Testing
 
-on:
-    schedule:
-        - cron: '30 6 * * 1-5'
+on: push
 
 jobs:
     execute_main_py:
