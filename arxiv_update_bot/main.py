@@ -4,46 +4,19 @@ Main file of the arxiv_update_bot module.
 Contains the methods to read configuration,
 fetch updates and send messages along with the cli.
 """
+
 import argparse
 import configparser
 from typing import List, Tuple
+from os import linesep
 
 import feedparser
 import telebot
 
-DEFAULT_CONFIGURATION_PATH = "/etc/arxiv-update-bot/config.ini"
-
-# pylint: disable=too-few-public-methods
-class Update:
-    """
-    Class representing an update section in the configuration file.
-
-    It is composed of a category, a chat id and a list of buzzwords.
-    """
-
-    chat_id: int  #: The chat id to send the update to.
-    category: str  #: The arxiv category.
-    buzzwords: List[str]  #: The list of buzzwords to trigger on.
-
-    def __init__(self, config: dict) -> None:
-        """Initialize the update instance.
-
-        Args:
-            config (dict): section of the configuration corresponding to the update.
-
-        Raises:
-            Exception: if the section is not complete (i.e. missing one of category, chat_id or buzzwords).
-        """
-        if not ("category" in config and "chat_id" in config and "buzzwords" in config):
-            raise Exception(
-                f"The section {config} is not complete. Missing one of three : category, chat_id or buzzwords."
-            )
-        self.category = config["category"]
-        self.chat_id = config["chat_id"]
-        self.buzzwords = config["buzzwords"].split(",")
+DEFAULT_CONFIGURATION_PATH = "./config.ini"
 
 
-def load_config(path: str) -> Tuple[str, List[Update]]:
+def load_config(path: str):
     """Load the configuration from the path.
     It will try to load the token from the [bot] section.
     Then it will iterate over the other sections to find the updates to verify.
@@ -62,21 +35,31 @@ def load_config(path: str) -> Tuple[str, List[Update]]:
     config = configparser.ConfigParser()
     config.read(path)
 
-    if "bot" not in config:
-        raise Exception(
-            "A bot section must be in the configuration file to set the token"
-        )
+    categories = config.sections()
+    categories.remove('general')
+    
+    buzzwords = dict()
+    authors = dict()
+    
+    general_buzzwords = config['general']['buzzwords'].split(',')
+    general_authors = config['general']['authors'].split(',')
+    categories_clean = []
+    for category in categories:
+        temp_buzzwords = config[category]["buzzwords"].split(",")
+        temp_buzzwords.extend(general_buzzwords)
+        temp_buzzwords = list(set(temp_buzzwords))
+        if '' in temp_buzzwords:
+            temp_buzzwords.remove('')
+        buzzwords.update({category:temp_buzzwords})
+        temp_authors = config[category]["authors"].split(",")
+        temp_authors.extend(general_authors)
+        temp_authors= list(set(temp_authors))
+        if '' in temp_authors:
+            temp_authors.remove('')
+        authors.update({category:temp_authors})
 
-    bot_config = config["bot"]
-    if "token" not in bot_config:
-        raise Exception("The bot section must have the bot token.")
 
-    token = bot_config["token"]
-    updates = []
-    for section in config.sections():
-        if str(section) != "bot":
-            updates.append(Update(config[section]))
-    return token, updates
+    return categories, buzzwords, authors
 
 
 def get_articles(category: str, buzzwords: List[str]) -> List:
@@ -96,9 +79,23 @@ def get_articles(category: str, buzzwords: List[str]) -> List:
     res = []
     for entry in news_feed.entries:
         for buzzword in buzzwords:
-            if buzzword in entry.title.lower():
-                res.append(entry)
+            if buzzword.lower() in entry.title.lower():
+                if entry not in res:
+                    res.append(entry)
+            if buzzword.lower() in entry.summary.lower():
+                if entry not in res:
+                    res.append(entry)
+    return res
 
+def get_favourite_authors_articles(category: str, authors: List[str]) -> List:
+
+    news_feed = feedparser.parse(f"http://export.arxiv.org/rss/{category}")
+    res = []
+    for entry in news_feed.entries:
+        for author in authors:
+            if author.lower() in entry.author.lower():
+                if entry not in res:
+                    res.append(entry)
     return res
 
 
@@ -107,7 +104,7 @@ def send_articles(
     chat_id: int,
     category: str,
     buzzwords: List[str],
-    quiet: bool = False,
+    authors: List[str],
 ) -> None:
     """Send the articles to telegram.
 
@@ -118,24 +115,56 @@ def send_articles(
         buzzwords (List[str]): list of buzzwords.
         quiet (bool, optional): whether to send a messae when no article is found. Defaults to False.
     """
+    author_articles = get_favourite_authors_articles(category, authors)
+    
+    if not author_articles:
+        bot.send_message(
+            chat_id,
+            text=f"No new articles from your favourite authors in section {category} today.",
+        )
+    else:
+        for article in author_articles:
+            try:
+                bot.send_message(
+                    chat_id,
+                    text=f"I found a paper by one of your favourite authors!",
+                    parse_mode="HTML",
+                )
+                bot.send_message(
+                    chat_id,
+                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>:{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
+                    parse_mode="HTML",
+                )
+            except:
+                bot.send_message(
+                    chat_id,
+                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}",
+                    parse_mode="HTML",
+                )
+    
+    
     articles = get_articles(category, buzzwords)
 
     if not articles:
-        if not quiet:
-            bot.send_message(
-                chat_id,
-                text="I scraped the arXiv RSS but found nothing of interest for you. Sorry.",
-            )
+        bot.send_message(
+            chat_id,
+            text="I scraped the arXiv RSS but found nothing of interest for you. Sorry.",
+        )
     else:
         bot.send_message(
             chat_id,
-            text=f"You are going to be happy. I found {len(articles)} article(s) of potential interest.",
+            text=f"You are going to be happy. I found {len(articles)} article(s) of potential interest in the section {category}.",
         )
-        for article in articles:
-            bot.send_message(
-                chat_id,
-                text=f"<strong>Title</strong>: {article.title}\n<strong>Authors</strong>: {article.authors[0]['name']}\n<strong>Link</strong>: {article.id}",
-            )
+        # for article in articles:
+        #     try:
+        #         #print(article.title)
+        #         # bot.send_message(
+        #         #     chat_id,
+        #         #     text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>:{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
+        #         #     parse_mode="HTML",
+        #         # )
+        #     except:
+        #         print('Error sending a message regarding the paper', article.title)
 
 
 def main():
@@ -143,45 +172,34 @@ def main():
     The main function.
     """
     parser = argparse.ArgumentParser(description="Scrap the arXiv")
+    parser.add_argument('token', metavar='token', type=str, #nargs='+',
+                    help='Telegram token for sending the messages')
+    parser.add_argument('id', metavar='id', type=int, #nargs='+',
+                    help='Telegram chat id for sending the messages')
+
     parser.add_argument(
         "-c",
         "--config-path",
         help="Path for configuration path. Replace default of /etc/arxiv-update-bot/config.ini",
     )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="If quiet is set, then the bot will not send message if no article are found.",
-    )
-    parser.add_argument(
-        "-p",
-        "--print-info",
-        action="store_true",
-        help="If print-info is set, then the bot will send its configuration instead of the updates.",
-    )
 
     args = parser.parse_args()
     config_path = args.config_path or DEFAULT_CONFIGURATION_PATH
-    quiet = args.quiet
-
-    token, updates = load_config(config_path)
+    token = args.token
+    chat_id = args.id
+    
+    categories, buzzwords, authors = load_config(config_path)
 
     bot = telebot.TeleBot(token, parse_mode="HTML")
 
-    for update in updates:
-        if args.print_info:
-            bot.send_message(
-                update.chat_id,
-                text=f"Hi there ! I am configured to send articles from category {update.category} with buzzwords {', '.join(update.buzzwords)}",
-            )
-        else:
-            send_articles(
+    for category in categories:
+        #print(category)
+        send_articles(
                 bot,
-                update.chat_id,
-                update.category,
-                update.buzzwords,
-                quiet=quiet,
+                chat_id,
+                category,
+                buzzwords[category],
+                authors[category]
             )
 
 

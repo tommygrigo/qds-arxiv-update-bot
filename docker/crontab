@@ -1,1 +1,0 @@
-${AUB_CRONTAB} /usr/local/bin/arxiv-update-bot -c /code/config.ini > /proc/1/fd/1 2>&1
