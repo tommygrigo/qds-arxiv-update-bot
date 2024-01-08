@@ -26,6 +26,6 @@ jobs:
                 
             - name: Execute main.py
               env: 
-                TOKEN: ${{sectrets.TOKEN}}
-                CHATID: ${{sectret.CHAT_ID}}
+                TOKEN: ${{secrets.TOKEN}}
+                CHATID: ${{secrets.CHAT_ID}}
               run: python ./arxiv_update_bot/main.py 
