@@ -156,16 +156,16 @@ def send_articles(
             chat_id,
             text=f"You are going to be happy. I found {len(articles)} article(s) of potential interest in the section {category}.",
         )
-        # for article in articles:
-        #     try:
-        #         #print(article.title)
-        #         # bot.send_message(
-        #         #     chat_id,
-        #         #     text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>:{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
-        #         #     parse_mode="HTML",
-        #         # )
-        #     except:
-        #         print('Error sending a message regarding the paper', article.title)
+        for article in articles:
+            try:
+                #print(article.title)
+                bot.send_message(
+                    chat_id,
+                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>:{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
+                    parse_mode="HTML",
+                )
+            except:
+                print('Error sending a message regarding the paper', article.title)
 
 
 def main():
