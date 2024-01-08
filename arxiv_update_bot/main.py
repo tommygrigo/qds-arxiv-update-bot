@@ -173,9 +173,9 @@ def main():
     The main function.
     """
     parser = argparse.ArgumentParser(description="Scrap the arXiv")
-    # parser.add_argument('token', metavar='token', type=str, #nargs='+',
+    # parser.add_argument('token', metavar='token', type=str,
     #                 help='Telegram token for sending the messages')
-    # parser.add_argument('id', metavar='id', type=int, #nargs='+',
+    # parser.add_argument('id', metavar='id', type=int,
     #                 help='Telegram chat id for sending the messages')
 
     parser.add_argument(
