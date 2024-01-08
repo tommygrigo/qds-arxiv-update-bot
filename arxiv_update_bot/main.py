@@ -189,8 +189,8 @@ def main():
     # token = args.token
     # chat_id = args.id
     
-    token = os.environ('TOKEN')
-    token = os.environ('CHATID')
+    token = os.environ['TOKEN']
+    chat_id = os.environ['CHATID']
     
     categories, buzzwords, authors = load_config(config_path)
 
