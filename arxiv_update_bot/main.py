@@ -149,7 +149,7 @@ def send_articles(
     if not articles:
         bot.send_message(
             chat_id,
-            text="I scraped the arXiv RSS but found nothing of interest for you. Sorry.",
+            text=f"I scraped the arXiv RSS but found nothing of interest for you in the section {category}. Sorry.",
         )
     else:
         bot.send_message(
@@ -195,6 +195,8 @@ def main():
     categories, buzzwords, authors = load_config(config_path)
 
     bot = telebot.TeleBot(token, parse_mode="HTML")
+    
+    bot.send_message(chat_id,'Good morning you!\n\n\n\n\n\n')
 
     for category in categories:
         #print(category)
