@@ -133,7 +133,7 @@ def send_articles(
                 )
                 bot.send_message(
                     chat_id,
-                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
+                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}",
                     parse_mode="HTML",
                 )
             except:
@@ -161,7 +161,7 @@ def send_articles(
                 #print(article.title)
                 bot.send_message(
                     chat_id,
-                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong>:{article.summary.replace(linesep,'').replace('<p>', '').replace('</p>', '')}",
+                    text=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.id}\n<strong>Abstract:</strong> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}",
                     parse_mode="HTML",
                 )
             except:
