@@ -2,7 +2,7 @@ name: Bot Workflow
 
 on:
     schedule:
-        - cron: '30 6 * * 1-5'
+        - cron: '30 5 * * 0-6'
 
 jobs:
     execute_main_py:
