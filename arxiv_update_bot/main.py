@@ -81,8 +81,9 @@ def get_articles(category: str, buzzwords: List[str]) -> List:
     for entry in news_feed.entries:
         for buzzword in buzzwords:
             if buzzword.lower() in entry.title.lower():
-                if entry not in res:
-                    res.append(entry)
+                if not 'announce type: replace' in entry.summary.lower():
+                    if entry not in res:
+                        res.append(entry)
             if buzzword.lower() in entry.summary.lower():
                 if not 'announce type: replace' in entry.summary.lower():
                     if entry not in res:
