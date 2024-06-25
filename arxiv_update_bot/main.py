@@ -84,8 +84,8 @@ def get_articles(category: str, buzzwords: List[str]) -> List:
                 if entry not in res:
                     res.append(entry)
             if buzzword.lower() in entry.summary.lower():
-                if entry not in res:
-                    if not 'announce type: replace' in entry.summary.lower():
+                if not 'announce type: replace' in entry.summary.lower():
+                    if entry not in res:
                         res.append(entry)
     return res
 
