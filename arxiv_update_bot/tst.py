@@ -6,7 +6,8 @@ import configparser
 from typing import List 
 from os import linesep
 import os
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import feedparser
 
 
@@ -112,29 +113,40 @@ def send_articles(
         buzzwords (List[str]): list of buzzwords.
         quiet (bool, optional): whether to send a messae when no article is found. Defaults to False.
     """
-    message = ''
+    message = f'<h1>{category}</h1>'
+
+    message += '<h2>Favourite authors </h2>'
 
     author_articles = get_favourite_authors_articles(category, authors)
     
     if not author_articles:
-        message += f"No new articles from your favourite authors in section {category} today.\n"
+        message += f"No new articles from your favourite authors in section {category} today.<br>"
     else:
         for article in author_articles:
             try:
-                message +="I found a paper by one of your favourite authors!\n"
-                message +=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.link}\n<strong>Abstract:</strong> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}\n"
+                message +=f"<h3>{article.title}</h3>"
+                message += f"<b>Authors:</b> {article.authors[0]['name']}<br>"
+                message += f"<b>Link:</b> {article.link}<br>"
+                message += f"<b>Abstract:</b> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}<br><br>"
             except:
-                message+=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.link}\m"    
+                message+=f"<h3>{article.title}</h3>"
+                message+=f"<b>Authors:</b> {article.authors[0]['name']}<br>"
+                message+=f"<b>Link:</b> {article.link}<br><br>"    
     
     articles = get_articles(category, buzzwords)
 
+    message += '<h2>Keywords </h2>'
+
     if not articles:
-        message+=f"I scraped the arXiv RSS but found nothing of interest for you in the section {category}. Sorry.\n"
+        message+=f"I scraped the arXiv RSS but found nothing of interest for you in the section {category}. Sorry.<br>"
     else:
-        message+=f"You are going to be happy. I found {len(articles)} article(s) of potential interest in the section {category}.\n"
+        message+=f"You are going to be happy. I found {len(articles)} article(s) of potential interest in the section {category}.<br><br>"
         for article in articles:
             try:
-                message+=f"<strong>Title:</strong> {article.title}\n<strong>Authors:</strong> {article.authors[0]['name']}\n<strong>Link:</strong> {article.link}\n<strong>Abstract:</strong> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}\n"
+                message +=f"<h3>{article.title}</h3>"
+                message += f"<b>Authors:</b> {article.authors[0]['name']}<br>"
+                message += f"<b>Link:</b> {article.link}<br>"
+                message += f"<b>Abstract:</b> {article.summary.replace(linesep,' ').replace('<p>', '').replace('</p>', '')}<br><br>"
             except:
                 print('Error sending a message regarding the paper', article.title)
     
@@ -167,16 +179,26 @@ def main():
                 buzzwords[category],
                 authors[category]
             ))
+        
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = email
+    msg['To'] = reciever_email
 
+    msg.attach(MIMEText('Good morning you!\n\n','plain'))
     message = 'Good morning you!\n\n'
+    html_msg = ''
     for m in article_lst:
         message += m
+        html_msg += m
+    msg.attach(MIMEText(html_msg,'html'))
 
     text = f'Subject: {subject}\n\n{message}'
     
-    server.sendmail(email,reciever_email, text)
+    server.sendmail(email,reciever_email, msg.as_string())
     
     print('Email sent')
+    server.quit()
 
 if __name__ == "__main__":
     main()
