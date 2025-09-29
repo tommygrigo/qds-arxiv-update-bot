@@ -26,4 +26,4 @@ jobs:
               env: 
                 TOKEN: ${{secrets.TOKEN}}
                 CHATID: ${{secrets.CHAT_ID}}
-              run: python ./arxiv_update_bot/main.py 
+              run: #python ./arxiv_update_bot/main.py 
